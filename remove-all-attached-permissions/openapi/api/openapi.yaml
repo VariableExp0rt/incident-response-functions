@@ -1,0 +1,172 @@
+openapi: 3.0.0
+info:
+  title: AWSAPICallViaCloudTrail
+  version: 1.0.0
+servers:
+- url: /
+paths: {}
+components:
+  schemas:
+    AWSEvent:
+      properties:
+        detail:
+          $ref: '#/components/schemas/AWSAPICallViaCloudTrail'
+        detail-type:
+          type: string
+        resources:
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        source:
+          type: string
+        time:
+          format: date-time
+          type: string
+        region:
+          type: string
+        version:
+          type: string
+        account:
+          type: string
+      required:
+      - account
+      - detail
+      - detail-type
+      - id
+      - region
+      - resources
+      - source
+      - time
+      - version
+      type: object
+      x-amazon-events-detail-type: AWS API Call via CloudTrail
+      x-amazon-events-source: aws.logs
+    AWSAPICallViaCloudTrail:
+      properties:
+        requestParameters:
+          $ref: '#/components/schemas/RequestParameters'
+        userIdentity:
+          $ref: '#/components/schemas/UserIdentity'
+        eventID:
+          type: string
+        awsRegion:
+          type: string
+        eventVersion:
+          type: string
+        responseElements:
+          nullable: true
+          type: object
+        sourceIPAddress:
+          type: string
+        eventSource:
+          type: string
+        errorMessage:
+          type: string
+        errorCode:
+          type: string
+        userAgent:
+          type: string
+        eventType:
+          type: string
+        apiVersion:
+          type: string
+        requestID:
+          type: string
+        eventTime:
+          format: date-time
+          type: string
+        eventName:
+          type: string
+      required:
+      - awsRegion
+      - eventID
+      - eventName
+      - eventSource
+      - eventTime
+      - eventType
+      - eventVersion
+      - requestID
+      - requestParameters
+      - responseElements
+      - sourceIPAddress
+      - userAgent
+      - userIdentity
+      type: object
+    RequestParameters:
+      nullable: true
+      properties:
+        logGroupName:
+          nullable: true
+          type: string
+        logStreamName:
+          nullable: true
+          type: string
+      required:
+      - logGroupName
+      type: object
+    UserIdentity:
+      properties:
+        sessionContext:
+          $ref: '#/components/schemas/SessionContext'
+        accessKeyId:
+          type: string
+        accountId:
+          type: string
+        principalId:
+          type: string
+        type:
+          type: string
+        arn:
+          type: string
+        invokedBy:
+          type: string
+      required:
+      - accessKeyId
+      - accountId
+      - arn
+      - principalId
+      - sessionContext
+      - type
+      type: object
+    SessionContext:
+      properties:
+        sessionIssuer:
+          $ref: '#/components/schemas/SessionIssuer'
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+      required:
+      - attributes
+      - sessionIssuer
+      type: object
+    SessionIssuer:
+      properties:
+        accountId:
+          type: string
+        principalId:
+          type: string
+        type:
+          type: string
+        arn:
+          type: string
+        userName:
+          type: string
+      required:
+      - accountId
+      - arn
+      - principalId
+      - type
+      - userName
+      type: object
+    Attributes:
+      properties:
+        mfaAuthenticated:
+          type: string
+        creationDate:
+          format: date-time
+          type: string
+      required:
+      - creationDate
+      - mfaAuthenticated
+      type: object
