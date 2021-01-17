@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sns"
+	//"github.com/VariableExp0rt/incident-response-functions/remove-all-attached-permissions/openapi"
 )
 
 const (
@@ -80,6 +81,14 @@ func LambdaHandler(ctx context.Context, event events.CloudWatchEvent) {
 		fmt.Printf("Error: %s", err)
 		return
 	}
+
+	//I've managed to find a CloudTrail schema in the EventBridge Schema Registry
+	//which can be used as a binding for a CloudTrail event type (with all the bells and
+	//whistles of additional methods)
+	/*
+		var cEvent openapi.AWSAPICallViaCloudTrail
+		_ = json.Unmarshal(event.Detail, &cEvent)
+	*/
 
 	//Establish service client and pass session information, i.e. use credentials
 	//of role attached to the Lambda function
