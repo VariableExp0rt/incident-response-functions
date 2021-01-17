@@ -24,7 +24,9 @@ const (
 )
 
 var (
-	sess = session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigStateFromEnv}))
+	sess = session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigStateFromEnv,
+	}))
 )
 
 //CloudTrailCloudWatchEventDetails is a custom type for unmarshalling the event.Details *json.RawMessage
@@ -32,7 +34,7 @@ var (
 //will need to look at this for specific events I'm forwarding.
 //we don't need many of the fields for this simple example, however we'd need
 //to create a struct to unmarshal all fields needed (requestParameters, responseElements)
-//if used
+//if used - as long as you have an example event https://mholt.github.io/json-to-go/
 type CloudTrailCloudWatchEventDetails struct {
 	EventVersion string    `json:"eventVersion"`
 	EventID      string    `json:"eventID"`
@@ -123,8 +125,12 @@ func LambdaHandler(ctx context.Context, event events.CloudWatchEvent) {
 
 	//
 	j := &ThreatDetails{
-		EventTime:  event.Time,
-		Details:    Details{Reason: reason, MitreTactic: mitreTactic, MitreTechnique: mitreTechnique, MitreSubTechnique: mitreSubTechnique},
+		EventTime: event.Time,
+		Details: Details{
+			Reason:            reason,
+			MitreTactic:       mitreTactic,
+			MitreTechnique:    mitreTechnique,
+			MitreSubTechnique: mitreSubTechnique},
 		AwsAPICall: cTrailEvent.EventName,
 	}
 
