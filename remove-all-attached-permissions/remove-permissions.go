@@ -58,9 +58,10 @@ type CloudTrailCloudWatchEventDetails struct {
 //ThreatDetails is a custom type to serialise JSON for publishing to a SNS topic
 //for alerting of detected "suspicious" actions
 type ThreatDetails struct {
-	EventTime  time.Time `json:"eventTime"`
-	Details    Details   `json:"details"`
-	AwsAPICall string    `json:"AwsAPICall"`
+	EventTime               time.Time            `json:"eventTime"`
+	Details                 Details              `json:"details"`
+	AwsAPICall              string               `json:"AwsAPICall"`
+	ServicesAccessedSummary map[string]time.Time `json:"servicesAccessedSummary"`
 }
 
 //Details is a sub-structure containing the details of the alert,
@@ -132,6 +133,32 @@ func LambdaHandler(ctx context.Context, event events.CloudWatchEvent) {
 		}
 	}
 
+	/*
+		section here for grabbing accessadvisor findings for recent roles this user has assumed
+		and their corresponding activity reports
+	*/
+
+	resp2, err := svc.GenerateServiceLastAccessedDetails(&iam.GenerateServiceLastAccessedDetailsInput{
+		Arn:         aws.String("arn:aws:iam::" + cTrailEvent.UserIdentity.AccountID + ":user/" + cTrailEvent.UserIdentity.UserName),
+		Granularity: aws.String("SERVICE_LEVEL"),
+	})
+	if err != nil {
+		fmt.Printf("Error creating last used services report: %v", err)
+	}
+
+	resp3, err := svc.GetServiceLastAccessedDetails(&iam.GetServiceLastAccessedDetailsInput{
+		JobId: resp2.JobId,
+	})
+	if err != nil {
+		fmt.Printf("Error accessing service last used report: %v", err)
+	}
+
+	var serviceList map[string]time.Time
+	for _, service := range resp3.ServicesLastAccessed {
+
+		serviceList[*service.ServiceName] = *service.LastAuthenticated
+	}
+
 	//
 	j := &ThreatDetails{
 		EventTime: event.Time,
@@ -140,17 +167,21 @@ func LambdaHandler(ctx context.Context, event events.CloudWatchEvent) {
 			MitreTactic:       mitreTactic,
 			MitreTechnique:    mitreTechnique,
 			MitreSubTechnique: mitreSubTechnique},
-		AwsAPICall: cTrailEvent.EventName,
+		AwsAPICall:              cTrailEvent.EventName,
+		ServicesAccessedSummary: serviceList,
 	}
 
 	mj, err := json.Marshal(j)
+	if err != nil {
+		fmt.Printf("Unable to marshal struct to JSON format: %v", err)
+	}
 
 	svc2 := sns.New(sess)
 
 	//Prepare the JSON object for publishing to the Simple Notification Service topic
 	//The design here requires that the topic ARN is included as an environment variable
 	//within your function
-	resp2, err := svc2.Publish(&sns.PublishInput{
+	resp4, err := svc2.Publish(&sns.PublishInput{
 		Message:          aws.String(string(mj)),
 		MessageStructure: aws.String("json"),
 		TopicArn:         aws.String(os.Getenv("SNS_TOPIC_ARN")),
@@ -162,7 +193,7 @@ func LambdaHandler(ctx context.Context, event events.CloudWatchEvent) {
 
 	//Print details of the published message to stdout so we can track this
 	//if the alert is not delivered
-	fmt.Printf("MessageId: %s, SequenceNumber: %s", *resp2.MessageId, *resp2.SequenceNumber)
+	fmt.Printf("MessageId: %s, SequenceNumber: %s", *resp4.MessageId, *resp4.SequenceNumber)
 
 }
 
